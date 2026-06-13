@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal Library</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #1a1a1a; }
+    header { background: #1a1a2e; color: #fff; padding: 16px 24px; }
+    header h1 { font-size: 18px; font-weight: 500; }
+    .container { max-width: 900px; margin: 32px auto; padding: 0 16px; }
+    .card { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 24px; margin-bottom: 24px; }
+    h2 { font-size: 15px; font-weight: 500; margin-bottom: 16px; }
+    label { display: block; font-size: 12px; font-weight: 500; color: #666; margin-bottom: 4px; }
+    input, textarea { width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; font-size: 13px; font-family: inherit; outline: none; margin-bottom: 10px; }
+    button { cursor: pointer; background: #534AB7; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; }
+    button:hover { background: #3C3489; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 500; color: #666; text-transform: uppercase; border-bottom: 1px solid #e5e5e5; background: #fafafa; }
+    td { padding: 10px; border-bottom: 1px solid #f3f4f6; }
+    tr:hover td { background: #fafafa; }
+    .empty { text-align: center; padding: 40px; color: #9ca3af; }
+    #msg { font-size: 13px; color: #16a34a; min-height: 20px; margin-top: 8px; }
+    #book-detail { display: none; }
+  </style>
+</head>
+<body>
+<header><h1>📚 Personal Library</h1></header>
+<div class="container">
+
+  <div class="card">
+    <h2>Add a Book</h2>
+    <label>Title</label>
+    <input type="text" id="title" placeholder="Enter book title">
+    <button onclick="addBook()">Add Book</button>
+    <div id="msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>All Books</h2>
+    <div id="books-list"><div class="empty">No books yet</div></div>
+    <br>
+    <button class="danger" onclick="deleteAllBooks()">Delete All Books</button>
+  </div>
+
+  <div class="card" id="book-detail">
+    <h2>Book Details</h2>
+    <div id="detail-content"></div>
+    <br>
+    <label>Add Comment</label>
+    <input type="text" id="comment-input" placeholder="Enter comment">
+    <button onclick="addComment()">Add Comment</button>
+  </div>
+
+</div>
+<script>
+let currentBookId = null;
+
+async function loadBooks() {
+  const res = await fetch('/api/books');
+  const books = await res.json();
+  const el = document.getElementById('books-list');
+  if (!books.length) { el.innerHTML = '<div class="empty">No books yet</div>'; return; }
+  el.innerHTML = `<table>
+    <thead><tr><th>Title</th><th>Comments</th><th>Actions</th></tr></thead>
+    <tbody>${books.map(b => `<tr>
+      <td><a href="#" onclick="viewBook('${b._id}');return false" style="color:#534AB7">${esc(b.title)}</a></td>
+      <td>${b.commentcount}</td>
+      <td><button class="danger" onclick="deleteBook('${b._id}')" style="padding:3px 8px;font-size:11px">Delete</button></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+async function addBook() {
+  const title = document.getElementById('title').value.trim();
+  const res = await fetch('/api/books', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({title}) });
+  const data = await res.json();
+  const msg = document.getElementById('msg');
+  if (data._id) { msg.style.color='#16a34a'; msg.textContent='Book added: '+data.title; document.getElementById('title').value=''; loadBooks(); }
+  else { msg.style.color='#dc2626'; msg.textContent=data; }
+  setTimeout(()=>msg.textContent='',3000);
+}
+
+async function viewBook(id) {
+  currentBookId = id;
+  const res = await fetch('/api/books/'+id);
+  const book = await res.json();
+  document.getElementById('book-detail').style.display='block';
+  document.getElementById('detail-content').innerHTML = `
+    <p><strong>${esc(book.title)}</strong> (${book._id})</p>
+    <p style="margin:8px 0;font-size:12px;color:#666">Comments: ${book.comments.length}</p>
+    <ul style="padding-left:16px;font-size:13px">${book.comments.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>
+  `;
+}
+
+async function addComment() {
+  const comment = document.getElementById('comment-input').value.trim();
+  if (!currentBookId || !comment) return;
+  await fetch('/api/books/'+currentBookId, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({comment}) });
+  document.getElementById('comment-input').value='';
+  viewBook(currentBookId);
+  loadBooks();
+}
+
+async function deleteBook(id) {
+  if (!confirm('Delete this book?')) return;
+  await fetch('/api/books/'+id, { method:'DELETE' });
+  if (currentBookId===id) document.getElementById('book-detail').style.display='none';
+  loadBooks();
+}
+
+async function deleteAllBooks() {
+  if (!confirm('Delete ALL books?')) return;
+  await fetch('/api/books', { method:'DELETE' });
+  document.getElementById('book-detail').style.display='none';
+  loadBooks();
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+loadBooks();
+</script>
+</body>
+</html>
