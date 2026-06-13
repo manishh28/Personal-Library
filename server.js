@@ -12,8 +12,8 @@ const fccTestingRoutes = require('./routes/fcctesting.js');
 const app = express();
 
 app.use('/public', express.static(process.cwd() + '/public'));
-app.use(cors());
-app.options('*', cors());
+app.use(cors({ origin: '*' }));
+app.options('*', cors({ origin: '*' }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
