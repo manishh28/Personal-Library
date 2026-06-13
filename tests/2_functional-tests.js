@@ -34,7 +34,7 @@ suite('Functional Tests', function() {
           .send({})
           .end(function(err, res) {
             assert.equal(res.status, 200);
-            assert.equal(res.body, 'missing required field title');
+            assert.equal(res.text, 'missing required field title');
             done();
           });
       });
@@ -78,7 +78,7 @@ suite('Functional Tests', function() {
           .get('/api/books/000000000000000000000000')
           .end(function(err, res) {
             assert.equal(res.status, 200);
-            assert.equal(res.body, 'no book exists');
+            assert.equal(res.text, 'no book exists');
             done();
           });
       });
@@ -108,7 +108,7 @@ suite('Functional Tests', function() {
           .send({})
           .end(function(err, res) {
             assert.equal(res.status, 200);
-            assert.equal(res.body, 'missing required field comment');
+            assert.equal(res.text, 'missing required field comment');
             done();
           });
       });
@@ -119,7 +119,7 @@ suite('Functional Tests', function() {
           .send({ comment: 'test' })
           .end(function(err, res) {
             assert.equal(res.status, 200);
-            assert.equal(res.body, 'no book exists');
+            assert.equal(res.text, 'no book exists');
             done();
           });
       });
@@ -133,7 +133,7 @@ suite('Functional Tests', function() {
           .delete('/api/books/' + testBookId)
           .end(function(err, res) {
             assert.equal(res.status, 200);
-            assert.equal(res.body, 'delete successful');
+            assert.equal(res.text, 'delete successful');
             done();
           });
       });
@@ -143,7 +143,7 @@ suite('Functional Tests', function() {
           .delete('/api/books/000000000000000000000000')
           .end(function(err, res) {
             assert.equal(res.status, 200);
-            assert.equal(res.body, 'no book exists');
+            assert.equal(res.text, 'no book exists');
             done();
           });
       });
